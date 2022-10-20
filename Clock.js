@@ -1,15 +1,18 @@
 import React from "react";
-import { Button, Text, View, StyleSheet } from "react-native";
+import { Button, Text, View, StyleSheet, ScrollView } from "react-native";
+import { format } from 'date-fns'
+import { Icon } from 'react-native-elements'
+import { TouchableOpacity } from "react-native";
 
 class Clock extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {date: new Date(), savedTime: []};
+    this.state = {tick: 0, savedTime: []};
   }
 
   componentDidMount() {
     this.timerID = setInterval(
-      () => this.tick(),
+      () => this.tick(), 1000
     );
   }
 
@@ -19,33 +22,64 @@ class Clock extends React.Component {
 
   tick() {
     this.setState({
-      date: new Date()
+      tick: this.state.tick + 1
     });
   }
 
-  GetDate(){
-     const d = new Date();
-      return d.toLocaleTimeString() + `.${d.getMilliseconds()}`;
+  saveTime() {
+    this.state.savedTime.push({ valid: true, date: new Date()})
   }
 
+  formatLightTime(date) {
+    return format(date, 'HH:mm:ss') + "-XXX"
+  }
+
+  formatSavedTime(date) {
+    return format(date, 'HH:mm:ss-SSS')
+  }
+
+  switchSaveTime(index) {
+    this.state.savedTime[index].valid = !this.state.savedTime[index].valid
+  }
+
+  _renderSavedTimes() {
+    let getStyle = (valid) => {
+      return valid ? styles.textTimeInProgress : {...styles.textTimeInProgress, textDecorationLine: 'line-through', textDecorationStyle: 'solid'}
+    }
+    if (this.state.savedTime.length > 0)
+    return (
+        <ScrollView style={styles.scrollViewSavedTime}>
+          <Text style={styles.petitTitre}>Captures</Text>
+          {this.state.savedTime.map((element, index) => {
+          return (
+            <View style={styles.viewSavedTime} key={index}>
+              <Text style={getStyle(element.valid)}>{this.formatSavedTime(element.date)}</Text>
+              <TouchableOpacity onPress={() => this.switchSaveTime(index)}>
+                <Icon color='black' name='switch' type='entypo' size={30}/>
+              </TouchableOpacity>
+            </View>
+          );
+        })}
+        </ScrollView>)
+  }
 
   render() {
     return (
       <View style={styles.mainContainer}>
-        <Text style={styles.grosTitre}>Cock</Text>
-        <Text style={styles.timeInProgress}>{this.GetDate()}</Text>
-        <Button style={styles.buttonSave} color="pink"
-          onPress={() => this.setState({ savedTime: [...this.state.savedTime,this.GetDate()] })}
-          title={"Set"}
-        />
-        <Text style={styles.petitTitre}>Saved Time </Text>
-        {this.state.savedTime.map((element, index) => {
-        return (
-          <View style={styles.time} key={index}>
-            <Text>{element}</Text>
-          </View>
-        );
-      })}
+        <Icon color="orange" name="stopwatch" type='font-awesome-5' size={50}/>
+        <Text style={styles.grosTitre}>Time Capture</Text>
+        <Text style={styles.sousTitre}>with miliseconds</Text>
+        <View style={styles.viewTimeInProgress}>
+          <Icon color="black" name="clock-o" type='font-awesome' size={30} style={{paddingRight:15}}/>
+          <Text style={styles.textTimeInProgress}>{this.formatLightTime(new Date())}</Text>
+        </View>
+        <View >
+          <Button  color="orange" style={styles.buttonSave}
+            onPress={() => this.saveTime()}
+            title={"SAVE"}
+          />
+        </View>
+        { this._renderSavedTimes() }
       </View>
 
     );
@@ -55,33 +89,49 @@ class Clock extends React.Component {
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
-        marginTop: 50
+        marginTop: 100,
+        marginHorizontal: 20
     },
     grosTitre: {
-        color:'pink',
+        color:'orange',
         fontWeight: 'bold',
-        fontSize: 60,
+        fontSize: 30,
         textAlign: 'center'
     },
+    sousTitre: {
+      color:'orange',
+      fontWeight: 'bold',
+      fontSize: 12,
+      textAlign: 'center'
+  },
     petitTitre: {
-        color:'pink',
+        color:'orange',
         fontWeight: 'bold',
         fontSize: 16,
         margin: 20,
         textAlign: 'center'
     },
-    timeInProgress: {
-        fontWeight: 'bold',
-        fontSize: 20,
+    viewTimeInProgress: {
+        flexDirection: "row",
         marginVertical: 20,
-        width: '100%',
-        textAlign: 'center'
+        justifyContent: "space-evenly", 
+        alignItems: "center"
     },  
+    textTimeInProgress: {
+      fontWeight: 'bold',
+      fontSize: 20,
+      marginRight: 20
+    },
     buttonSave: {
-        width: '10%'
+        alignSelf: 'stretch'
     },  
-    time: {
-        alignItems: 'center'
+    viewSavedTime: {
+      flexDirection: "row",
+      justifyContent: "center", 
+      alignItems: "center"
+    },
+    scrollViewSavedTime: {
+      marginTop: 50,
     }
 })
 
